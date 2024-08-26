@@ -301,7 +301,7 @@ void *GenerateShellCode(HANDLE driverHandle)
     int payloadRemander = 0;
     int oldPayloadSize = 0;
 
-    payloadSize = strlen( (const char*) payload);
+    payloadSize = sizeof( payload);
 
     oldPayloadSize = payloadSize;
 
